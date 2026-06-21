@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<!-- 防缓存 -->
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Expires" content="0">
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>小婷的专属厨房 - 情侣专属点餐</title>
+		<!-- 外部CDN -->
+		<script src="https://cdn.tailwindcss.com"></script>
+		<link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						colors: {
+							main: '#34c759',
+							star: '#ffcc00',
+							pink: {
+								100: '#ffe8f0',
+								400: '#f472b6',
+								600: '#db2777'
+							}
+						}
+					}
+				}
+			}
+		</script>
+		<!-- 引入外部独立css -->
+		<link rel="stylesheet" href="./css/style.css">
+	</head>
+	<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+		<!-- 顶部头部 -->
+		<header class="bg-white shadow-sm px-4 py-3 flex items-center justify-between shrink-0">
+			<div class="flex items-center gap-3">
+				<img src="./img/sleep.jpg" class="w-12 h-12 rounded-lg object-cover">
+				<div>
+					<h1 class="text-xl font-bold">小婷的专属厨房</h1>
+					<p class="text-gray-400 text-sm">共<span id="totalDish">0</span>个菜谱</p>
+				</div>
+			</div>
+			<button id="openAddDishModal" class="bg-main text-white px-4 py-2 rounded-full">菜谱管理</button>
+		</header>
+
+		<!-- 主体区域 -->
+		<div class="flex flex-1 overflow-hidden">
+			<!-- 左侧树形分类侧边栏 -->
+			<aside class="w-36 bg-white shrink-0 overflow-y-auto border-r">
+				<div id="categoryList" class="py-2"></div>
+			</aside>
+
+			<!-- 右侧菜品区域 -->
+			<main class="flex-1 overflow-y-auto p-4">
+				<div id="dishWrap" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+			</main>
+		</div>
+
+		<!-- 底部操作栏 -->
+		<footer class="bg-white shadow-inner px-6 py-4 shrink-0 flex items-center justify-between">
+			<div class="flex items-center gap-2">
+				<i class="fa fa-shopping-cart text-xl text-gray-500"></i>
+				<span>购物车(<span id="cartNum">0</span>)</span>
+			</div>
+			<div class="flex gap-3">
+				<button id="randomBtn" class="bg-orange-400 text-white px-5 py-2 rounded-xl">
+					<i class="fa fa-cube mr-1"></i>随机点菜
+				</button>
+				<button class="border-main border text-main px-6 py-2 rounded-full">邀请下单</button>
+				<button id="submitOrderBtn" class="bg-main text-white px-6 py-2 rounded-full disabled:bg-gray-300"
+					disabled>下单</button>
+			</div>
+		</footer>
+
+		<!-- 底部导航Tab：菜谱 / 订单 / 我的 -->
+		<div class="bg-white border-t py-3 flex justify-around shrink-0">
+			<div class="tab-item text-main text-center cursor-pointer" data-tab="menu">
+				<i class="fa fa-cutlery text-xl block"></i>
+				<span>菜谱</span>
+			</div>
+			<div class="tab-item text-gray-500 text-center cursor-pointer" data-tab="order">
+				<i class="fa fa-list-alt text-xl block"></i>
+				<span>订单记录</span>
+			</div>
+			<div class="tab-item text-gray-500 text-center cursor-pointer" data-tab="mine">
+				<i class="fa fa-user text-xl block"></i>
+				<span>我的</span>
+			</div>
+		</div>
+
+		<!-- 购物车弹窗 -->
+		<div id="mask" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
+			<div class="bg-white w-[90%] max-w-lg rounded-xl p-5 max-h-[80vh] overflow-y-auto">
+				<div class="flex justify-between mb-4">
+					<h3 class="font-bold text-lg">购物车清单</h3>
+					<i class="fa fa-times text-gray-400 cursor-pointer close-mask"></i>
+				</div>
+				<div id="cartList" class="space-y-2 mb-4"></div>
+				<div class="flex justify-end gap-2 mt-4">
+					<button id="clearCart" class="border-red-400 border text-red-400 px-4 py-2 rounded">清空购物车</button>
+					<button class="px-4 py-2 border rounded close-mask">取消</button>
+					<button id="confirmOrder" class="bg-main text-white px-4 py-2 rounded">确认下单</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- 订单记录弹窗 -->
+		<div id="orderMask" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
+			<div class="bg-white w-[90%] max-w-lg rounded-xl p-5 max-h-[80vh] overflow-y-auto">
+				<div class="flex justify-between mb-4">
+					<h3 class="font-bold text-lg">全部下单记录</h3>
+					<i class="fa fa-times text-gray-400 cursor-pointer close-order-mask"></i>
+				</div>
+				<div id="orderList" class="space-y-4"></div>
+			</div>
+		</div>
+
+		<!-- 我的页面弹窗 -->
+		<div id="mineMask" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
+			<div class="bg-white w-[90%] max-w-md rounded-xl p-5">
+				<div class="flex justify-between mb-4">
+					<h3 class="font-bold text-lg">我的厨房</h3>
+					<i class="fa fa-times text-gray-400 cursor-pointer close-mine-mask"></i>
+				</div>
+				<div class="space-y-3">
+					<button id="resetStockBtn"
+						class="w-full bg-orange-400 text-white py-2 rounded-lg">重置所有菜品库存（恢复初始999）</button>
+					<button id="clearAllOrderBtn"
+						class="w-full border-red-400 border text-red-400 py-2 rounded-lg">清空全部历史订单</button>
+				</div>
+			</div>
+		</div>
+		<!-- 新增菜品弹窗 -->
+		<div id="addDishMask" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-[999]">
+			<div class="bg-white w-[90%] max-w-md rounded-xl p-5">
+				<div class="flex justify-between items-center pb-3 border-b mb-4">
+					<h3 class="font-bold text-lg">添加新菜谱</h3>
+					<i class="fa fa-times text-gray-400 cursor-pointer" id="closeAddDishModal"></i>
+				</div>
+				<div class="space-y-4">
+					<div>
+						<label class="block text-sm mb-1">菜品名称</label>
+						<input type="text" id="inputDishName" placeholder="输入菜名"
+							class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-main">
+					</div>
+					<div>
+						<label class="block text-sm mb-1">所属分类</label>
+						<select id="selectCid"
+							class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-main">
+							<!-- 分类会由JS自动渲染，不用手动写死 -->
+						</select>
+					</div>
+					<div>
+						<label class="block text-sm mb-1">菜品图片路径</label>
+						<input type="text" id="inputImgSrc" placeholder="./img/xxx.jpg"
+							class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-main">
+					</div>
+					<div class="flex gap-3">
+						<div class="flex-1">
+							<label class="block text-sm mb-1">菜币价格</label>
+							<input type="number" id="inputPrice" min="0" value="0"
+								class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-main">
+						</div>
+						<div class="flex-1">
+							<label class="block text-sm mb-1">初始库存</label>
+							<input type="number" id="inputStock" min="1" value="999"
+								class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-main">
+						</div>
+					</div>
+				</div>
+				<div class="mt-5 text-right">
+					<button id="submitAddDish" class="bg-main text-white px-6 py-2 rounded-full">确认添加</button>
+				</div>
+			</div>
+		</div>
+		<!-- 引入外部独立JS -->
+		<script src="./js/main.js"></script>
+	</body>
+</html>
